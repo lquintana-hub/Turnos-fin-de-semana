@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnos Fin de Semana</title>
+<style>
+  :root {
+    --azul: #1e3a5f;
+    --azul-medio: #2c5282;
+    --azul-claro: #ebf4ff;
+    --azul-borde: #bee3f8;
+    --gris-bg: #f7f8fa;
+    --gris-borde: #e2e8f0;
+    --gris-texto: #4a5568;
+    --verde: #276749;
+    --verde-bg: #f0fff4;
+    --verde-borde: #9ae6b4;
+    --rojo: #c53030;
+    --rojo-bg: #fff5f5;
+    --amarillo-bg: #fffbeb;
+    --amarillo-borde: #f6e05e;
+    --texto: #1a202c;
+    --blanco: #ffffff;
+    --sombra: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --sombra-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gris-bg); color: var(--texto); font-size: 14px; }
+
+  /* HEADER */
+  header { background: var(--azul); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--sombra-md); }
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  header .subtitulo { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .btn-login { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+  .btn-login:hover { background: rgba(255,255,255,0.25); }
+  .badge-editor { background: #48bb78; color: white; font-size: 11px; padding: 3px 8px; border-radius: 10px; margin-left: 10px; font-weight: 500; }
+
+  /* CONTENEDOR */
+  main { max-width: 1400px; margin: 0 auto; padding: 20px 16px; }
+
+  /* PANEL DE CONFIGURACIÓN */
+  .panel { background: white; border-radius: 10px; box-shadow: var(--sombra); margin-bottom: 16px; overflow: hidden; }
+  .panel-header { background: var(--azul-claro); border-bottom: 1px solid var(--azul-borde); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .panel-header span { font-weight: 600; color: var(--azul-medio); font-size: 13px; }
+  .panel-header .chevron { transition: transform 0.2s; font-size: 16px; color: var(--azul-medio); }
+  .panel-header.collapsed .chevron { transform: rotate(-90deg); }
+  .panel-body { padding: 16px; }
+  .panel-body.hidden { display: none; }
+
+  /* FILA DE CONTROLES */
+  .controles { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .ctrl-grupo { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-grupo label { font-size: 11px; font-weight: 600; color: var(--gris-texto); text-transform: uppercase; letter-spacing: 0.5px; }
+  .ctrl-grupo input, .ctrl-grupo select { border: 1px solid var(--gris-borde); border-radius: 6px; padding: 7px 10px; font-size: 13px; background: white; outline: none; transition: border-color 0.2s; }
+  .ctrl-grupo input:focus, .ctrl-grupo select:focus { border-color: var(--azul-medio); box-shadow: 0 0 0 2px rgba(44,82,130,0.15); }
+
+  /* BOTONES */
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--azul-medio); color: white; }
+  .btn-primary:hover { background: var(--azul); }
+  .btn-success { background: #38a169; color: white; }
+  .btn-success:hover { background: var(--verde); }
+  .btn-danger { background: #e53e3e; color: white; }
+  .btn-danger:hover { background: var(--rojo); }
+  .btn-ghost { background: transparent; border: 1px solid var(--gris-borde); color: var(--gris-texto); }
+  .btn-ghost:hover { background: var(--gris-bg); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* LEYENDA */
+  .leyenda { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .ley-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gris-texto); }
+  .ley-badge { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+
+  /* TABLA */
+  .tabla-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gris-borde); }
+  table { border-collapse: collapse; width: 100%; min-width: 800px; font-size: 13px; table-layout: fixed; }
+  th { background: var(--azul); color: white; padding: 8px 6px; text-align: center; font-weight: 600; font-size: 12px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.15); }
+  th:first-child { text-align: left; padding-left: 12px; width: 160px; }
+  th.col-linea { width: 38px; padding: 8px 2px; }
+  th.grupo { background: var(--azul-medio); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+  td { border-bottom: 1px solid var(--gris-borde); border-right: 1px solid var(--gris-borde); text-align: center; padding: 3px 4px; vertical-align: middle; }
+  td:first-child { text-align: left; padding: 6px 12px; font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  tr.fila-sabado { background: #f0f4ff; }
+  tr.fila-domingo { background: #fff8f0; }
+  tr.fila-lunes { background: #f0fff4; }
+  tr.fila-feriado { background: #fffbeb; }
+  tr:hover td { filter: brightness(0.97); }
+
+  /* CELDAS DE ESTADO */
+  .celda-btn { width: 32px; height: 28px; border-radius: 4px; border: none; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.12s; display: inline-flex; align-items: center; justify-content: center; }
+  .estado-X { background: #c6f6d5; color: #276749; border: 1px solid #9ae6b4; }
+  .estado-X:hover { background: #9ae6b4; }
+  .estado-dash { background: #fed7d7; color: #c53030; border: 1px solid #fc8181; }
+  .estado-dash:hover { background: #fc8181; }
+  .estado-M { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
+  .estado-M:hover { background: #f6e05e; }
+  .estado-P { background: #e9d8fd; color: #553c9a; border: 1px solid #d6bcfa; }
+  .estado-P:hover { background: #d6bcfa; }
+  .estado-ast { background: #bee3f8; color: #2b6cb0; border: 1px solid #90cdf4; }
+  .estado-ast:hover { background: #90cdf4; }
+  .estado-vacio { background: #f7fafc; color: #a0aec0; border: 1px dashed #cbd5e0; }
+  .estado-vacio:hover { background: #edf2f7; }
+
+  /* FILA TURNO INFO */
+  td .turno-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+  .tag-TM { background: #fefcbf; color: #744210; }
+  .tag-TT { background: #fed7e2; color: #702459; }
+  .tag-TN { background: #e9d8fd; color: #553c9a; }
+
+  /* PANEL ENVIO */
+  .envio-panel { background: white; border-radius: 10px; box-shadow: var(--sombra); padding: 20px; margin-top: 16px; }
+  .envio-titulo { font-weight: 600; color: var(--azul); margin-bottom: 14px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .destinatarios-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .dest-tag { background: var(--azul-claro); border: 1px solid var(--azul-borde); color: var(--azul-medio); padding: 4px 10px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .dest-tag .quitar { background: none; border: none; color: var(--azul-medio); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+  .dest-tag .quitar:hover { color: var(--rojo); }
+  .add-dest { display: flex; gap: 8px; margin-bottom: 14px; }
+  .add-dest input { flex: 1; border: 1px solid var(--gris-borde); border-radius: 6px; padding: 7px 10px; font-size: 13px; outline: none; }
+  .add-dest input:focus { border-color: var(--azul-medio); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: white; border-radius: 12px; padding: 28px; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal h2 { font-size: 17px; font-weight: 600; color: var(--azul); margin-bottom: 16px; }
+  .modal input { width: 100%; border: 1px solid var(--gris-borde); border-radius: 6px; padding: 9px 12px; font-size: 14px; margin-bottom: 12px; outline: none; }
+  .modal input:focus { border-color: var(--azul-medio); box-shadow: 0 0 0 2px rgba(44,82,130,0.15); }
+  .modal .err { color: var(--rojo); font-size: 12px; margin-bottom: 10px; }
+  .modal .acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a202c; color: white; padding: 12px 20px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 2000; transition: all 0.3s; transform: translateY(0); }
+  .toast.hidden { transform: translateY(80px); opacity: 0; }
+  .toast.success { background: #276749; }
+  .toast.error { background: var(--rojo); }
+
+  /* VISTA PREVIA EMAIL */
+  .preview-email { border: 1px solid var(--gris-borde); border-radius: 8px; padding: 16px; background: #fafafa; font-size: 12px; color: var(--gris-texto); margin-top: 12px; line-height: 1.6; }
+  .preview-email table { font-size: 11px; border-collapse: collapse; width: 100%; }
+  .preview-email th, .preview-email td { border: 1px solid #ccc; padding: 4px 7px; }
+  .preview-email th { background: #1e3a5f; color: white; }
+
+  .semana-label { font-size: 12px; color: var(--gris-texto); background: var(--gris-bg); border: 1px solid var(--gris-borde); padding: 4px 10px; border-radius: 6px; }
+  .acciones-tabla { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .seccion-titulo { font-size: 11px; font-weight: 600; color: var(--gris-texto); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+  @media (max-width: 600px) { header { flex-wrap: wrap; gap: 8px; } main { padding: 12px 8px; } }
+</style>
+</head>
+<body>
+
+<!-- MODAL LOGIN -->
+<div class="modal-overlay" id="modalLogin">
+  <div class="modal">
+    <h2>🔒 Acceso planificadores</h2>
+    <p style="font-size:13px;color:var(--gris-texto);margin-bottom:14px;">Ingresá la contraseña para editar el cuadro de turnos.</p>
+    <input type="password" id="inputPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')verificarPass()">
+    <div class="err hidden" id="errPass">Contraseña incorrecta. Intentá de nuevo.</div>
+    <div class="acciones">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarLogin()">Solo ver</button>
+      <button class="btn btn-primary btn-sm" onclick="verificarPass()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR FILA -->
+<div class="modal-overlay hidden" id="modalFila">
+  <div class="modal">
+    <h2>Agregar turno</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="ctrl-grupo">
+        <label>Día</label>
+        <select id="nDia">
+          <option value="Sábado">Sábado</option>
+          <option value="Domingo">Domingo</option>
+          <option value="Lunes">Lunes</option>
+          <option value="Feriado">Feriado / Otro día</option>
+        </select>
+      </div>
+      <div class="ctrl-grupo" id="grpFecha">
+        <label>Fecha (opcional)</label>
+        <input type="date" id="nFecha">
+      </div>
+      <div class="ctrl-grupo">
+        <label>Turno</label>
+        <select id="nTurno">
+          <option value="TM">TM — Turno mañana</option>
+          <option value="TT">TT — Turno tarde</option>
+          <option value="TN">TN — Turno noche</option>
+        </select>
+      </div>
+      <div class="ctrl-grupo" id="grpNombreDia" style="display:none">
+        <label>Nombre del día (ej: Lunes feriado, Viernes largo)</label>
+        <input type="text" id="nNombreDia" placeholder="ej: Martes feriado">
+      </div>
+    </div>
+    <div class="acciones" style="margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalFila').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="agregarFila()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR LÍNEA -->
+<div class="modal-overlay hidden" id="modalLinea">
+  <div class="modal">
+    <h2>Agregar línea de producción</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="ctrl-grupo">
+        <label>Nombre de la línea (ej: L16, L23)</label>
+        <input type="text" id="nLinea" placeholder="L16">
+      </div>
+      <div class="ctrl-grupo">
+        <label>Sector</label>
+        <select id="nSector">
+          <option value="EXTRUSIÓN">EXTRUSIÓN</option>
+          <option value="MEZCLADO">MEZCLADO</option>
+          <option value="MOLINO">MOLINO</option>
+          <option value="FOLIADO">FOLIADO</option>
+          <option value="PLANTA RECICLADO">PLANTA RECICLADO</option>
+        </select>
+      </div>
+    </div>
+    <div class="acciones" style="margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalLinea').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="agregarLinea()">Agregar línea</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <h1>Planificación de turnos</h1>
+    <div class="subtitulo">Cuadro semanal de producción</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="semanaLabel" class="semana-label"></span>
+    <span id="badgeEditor" class="badge-editor hidden">Modo editor</span>
+    <button class="btn-login" id="btnLoginHeader" onclick="abrirLogin()">🔐 Editar</button>
+    <button class="btn-login hidden" id="btnLogout" onclick="salir()">Salir</button>
+  </div>
+</header>
+
+<main>
+  <!-- PANEL CONFIGURACIÓN (solo editor) -->
+  <div class="panel editor-only hidden">
+    <div class="panel-header" onclick="togglePanel(this)">
+      <span>⚙️ Configuración de la tabla</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="panel-body">
+      <div class="controles">
+        <div class="ctrl-grupo">
+          <label>Fecha de inicio del fin de semana</label>
+          <input type="date" id="fechaInicio" onchange="actualizarFechaInicio()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="panel">
+    <div class="panel-header" onclick="togglePanel(this)">
+      <span>📋 Cuadro de turnos</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="panel-body">
+      <div class="leyenda">
+        <div class="ley-item"><div class="ley-badge estado-X">X</div> Trabaja</div>
+        <div class="ley-item"><div class="ley-badge estado-dash">-</div> No trabaja</div>
+        <div class="ley-item"><div class="ley-badge estado-ast">*</div> A confirmar</div>
+        <div class="ley-item"><div class="ley-badge estado-M">M</div> Mantenimiento</div>
+        <div class="ley-item"><div class="ley-badge estado-P">P</div> Pruebas</div>
+        <div class="ley-item"><div class="ley-badge estado-vacio">·</div> Sin definir</div>
+      </div>
+
+      <div class="tabla-wrap">
+        <table id="tablaTurnos">
+          <!-- Se genera con JS -->
+        </table>
+      </div>
+
+      <div class="acciones-tabla editor-only hidden">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalFila').classList.remove('hidden')">＋ Agregar turno</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalLinea').classList.remove('hidden')">＋ Agregar línea de producción</button>
+        <button class="btn btn-danger btn-sm" id="btnEliminarFila" disabled onclick="eliminarFilaSeleccionada()">🗑 Eliminar turno seleccionado</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL ENVÍO -->
+  <div class="envio-panel">
+    <div class="envio-titulo">📧 Enviar correo semanal</div>
+
+    <div class="seccion-titulo">Destinatarios</div>
+    <div class="destinatarios-lista" id="listaDest"></div>
+    <div class="add-dest editor-only hidden">
+      <input type="email" id="inputDest" placeholder="email@empresa.com" onkeydown="if(event.key==='Enter')agregarDest()">
+      <button class="btn btn-ghost btn-sm" onclick="agregarDest()">＋ Agregar</button>
+    </div>
+
+    <div class="seccion-titulo" style="margin-top:12px;">Asunto del correo</div>
+    <div class="ctrl-grupo" style="margin-bottom:12px;">
+      <input type="text" id="asuntoMail" value="Turnos fin de semana" style="border:1px solid var(--gris-borde);border-radius:6px;padding:7px 10px;font-size:13px;width:100%;outline:none;" readonly id="asuntoMailInput">
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="togglePreview()">👁 Vista previa del mail</button>
+      <button class="btn btn-success" onclick="copiarMailtoLink()">📋 Copiar link mailto</button>
+      <button class="btn btn-primary" onclick="abrirGASInstrucciones()">📤 Enviar con Gmail (Google Apps Script)</button>
+    </div>
+
+    <div id="previewEmail" class="preview-email hidden" style="margin-top:14px;"></div>
+
+    <!-- INSTRUCCIONES GAS -->
+    <div id="instrGAS" class="hidden" style="margin-top:14px;border:1px solid var(--azul-borde);border-radius:8px;background:var(--azul-claro);padding:16px;">
+      <p style="font-weight:600;color:var(--azul);margin-bottom:8px;">📌 Cómo configurar el envío automático con Gmail</p>
+      <ol style="margin-left:16px;font-size:12px;color:var(--gris-texto);line-height:2;">
+        <li>Abrí <a href="https://script.google.com" target="_blank" style="color:var(--azul-medio)">script.google.com</a> con tu cuenta de Gmail</li>
+        <li>Creá un proyecto nuevo y pegá el código que se descarga abajo</li>
+        <li>Hacé clic en "Guardar" y luego en "Implementar &gt; Nueva implementación"</li>
+        <li>Autorizá los permisos de Gmail cuando te lo pida</li>
+        <li>Copiá la URL del script y guardala — la necesitarás para enviar desde esta página</li>
+        <li>Pegá esa URL en el campo de abajo:</li>
+      </ol>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input type="text" id="urlGAS" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;border:1px solid var(--azul-borde);border-radius:6px;padding:7px 10px;font-size:12px;outline:none;">
+        <button class="btn btn-primary btn-sm" onclick="enviarViaGAS()">Enviar ahora</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="descargarGAS()">⬇ Descargar código Apps Script</button>
+    </div>
+  </div>
+  <!-- PANEL CONTRASEÑA (colapsado, solo editor) -->
+  <div class="panel editor-only hidden" style="margin-top:16px;">
+    <div class="panel-header collapsed" onclick="togglePanel(this)">
+      <span>🔑 Cambiar contraseña de planificadores</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="panel-body hidden">
+      <div class="controles">
+        <div class="ctrl-grupo">
+          <label>Nueva contraseña</label>
+          <input type="password" id="inputNuevaPass" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <button class="btn btn-ghost btn-sm" onclick="cambiarPass()">Guardar contraseña</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+// ==================== ESTADO ====================
+const PASS_DEFAULT = 'planif2024';
+let APP = {
+  esEditor: false,
+  pass: localStorage.getItem('turnos_pass') || PASS_DEFAULT,
+  semanaDesde: '',
+  semanaHasta: '',
+  sectores: ['EXTRUSIÓN','MEZCLADO','MOLINO','FOLIADO','PLANTA RECICLADO'],
+  lineas: [
+    {nombre:'L22', sector:'EXTRUSIÓN'},
+    {nombre:'L1', sector:'EXTRUSIÓN'},
+    {nombre:'L2', sector:'EXTRUSIÓN'},
+    {nombre:'L3', sector:'EXTRUSIÓN'},
+    {nombre:'L4', sector:'EXTRUSIÓN'},
+    {nombre:'L5', sector:'EXTRUSIÓN'},
+    {nombre:'L6', sector:'EXTRUSIÓN'},
+    {nombre:'L7', sector:'EXTRUSIÓN'},
+    {nombre:'L8', sector:'EXTRUSIÓN'},
+    {nombre:'L15', sector:'MEZCLADO'},
+    {nombre:'L14', sector:'MOLINO'},
+    {nombre:'L9', sector:'FOLIADO'},
+    {nombre:'L10', sector:'FOLIADO'},
+    {nombre:'L11', sector:'FOLIADO'},
+    {nombre:'L12', sector:'FOLIADO'},
+    {nombre:'L13', sector:'FOLIADO'},
+    {nombre:'PLANTA', sector:'PLANTA RECICLADO'},
+  ],
+  filas: [
+    {dia:'Sábado', turno:'TM', fecha:'', tipo:'sabado'},
+    {dia:'Sábado', turno:'TT', fecha:'', tipo:'sabado'},
+    {dia:'Sábado', turno:'TN', fecha:'', tipo:'sabado'},
+    {dia:'Domingo', turno:'TM', fecha:'', tipo:'domingo'},
+    {dia:'Domingo', turno:'TT', fecha:'', tipo:'domingo'},
+    {dia:'Domingo', turno:'TN', fecha:'', tipo:'domingo'},
+    {dia:'Lunes', turno:'TM', fecha:'', tipo:'lunes'},
+  ],
+  estados: (function() {
+    const e = {};
+    // Filas que trabajan por defecto: Sábado TM (0), Domingo TN (5), Lunes TM (6)
+    [0, 5, 6].forEach(r => {
+      for (let c = 0; c < 17; c++) e[`r${r}_c${c}`] = 'X';
+    });
+    return e;
+  })(),
+  destinatarios: [],
+  filaSeleccionada: null,
+};
+
+const CICLO = ['', 'X', '-', '*', 'M', 'P'];
+const ETIQUETAS = {'X':'Trabaja', '-':'No trabaja', '*':'A confirmar', 'M':'Mantenimiento', 'P':'Pruebas', '':'Sin definir'};
+
+function claveEstado(iRow, iCol) { return `r${iRow}_c${iCol}`; }
+
+function cargarStorage() {
+  try {
+    const d = localStorage.getItem('turnos_data');
+    if (d) {
+      const p = JSON.parse(d);
+      if (p.lineas) APP.lineas = p.lineas;
+      if (p.filas) APP.filas = p.filas;
+      if (p.estados) APP.estados = p.estados;
+      if (p.destinatarios) APP.destinatarios = p.destinatarios;
+      if (p.semanaDesde) APP.semanaDesde = p.semanaDesde;
+      if (p.semanaHasta) APP.semanaHasta = p.semanaHasta;
+    }
+    if (localStorage.getItem('turnos_pass')) APP.pass = localStorage.getItem('turnos_pass');
+  } catch(e) {}
+}
+
+function guardarStorage() {
+  localStorage.setItem('turnos_data', JSON.stringify({
+    lineas: APP.lineas, filas: APP.filas, estados: APP.estados,
+    destinatarios: APP.destinatarios, semanaDesde: APP.semanaDesde, semanaHasta: APP.semanaHasta
+  }));
+}
+
+// ==================== TABLA ====================
+function construirTabla() {
+  const tabla = document.getElementById('tablaTurnos');
+  const sectores = APP.sectores;
+
+  // Agrupar líneas por sector preservando orden
+  const sectorLineas = {};
+  sectores.forEach(s => { sectorLineas[s] = []; });
+  APP.lineas.forEach(l => {
+    if (!sectorLineas[l.sector]) sectorLineas[l.sector] = [];
+    sectorLineas[l.sector].push(l.nombre);
+  });
+
+  const sectoresActivos = sectores.filter(s => sectorLineas[s].length > 0);
+
+  // THEAD
+  let thead = '<thead>';
+  // Fila 1: grupos
+  thead += '<tr><th rowspan="2" style="background:var(--azul)">Turno</th>';
+  sectoresActivos.forEach(s => {
+    const cols = sectorLineas[s].length;
+    thead += `<th colspan="${cols}" class="grupo">${s}</th>`;
+  });
+  thead += '</tr>';
+  // Fila 2: líneas
+  thead += '<tr>';
+  sectoresActivos.forEach(s => {
+    sectorLineas[s].forEach(l => {
+      thead += `<th class="col-linea">${l}</th>`;
+    });
+  });
+  thead += '</tr></thead>';
+
+  // Construir orden de columnas
+  const colsOrden = [];
+  sectoresActivos.forEach(s => sectorLineas[s].forEach(l => colsOrden.push(l)));
+
+  // TBODY
+  let tbody = '<tbody>';
+  APP.filas.forEach((fila, iRow) => {
+    const claseRow = `fila-${fila.tipo || fila.dia.toLowerCase().split(' ')[0]}`;
+    const selClass = APP.filaSeleccionada === iRow ? 'style="outline:2px solid var(--azul-medio);outline-offset:-1px"' : '';
+    tbody += `<tr class="${claseRow}" data-row="${iRow}" onclick="seleccionarFila(${iRow})">`;
+    // Columna nombre turno
+    const tag = `<span class="turno-tag tag-${fila.turno}">${fila.turno}</span>`;
+    tbody += `<td><strong>${fila.dia}</strong>${tag}</td>`;
+    // Columnas estados
+    colsOrden.forEach((linea, iCol) => {
+      const k = claveEstado(iRow, iCol);
+      const est = APP.estados[k] || '';
+      const claseBtn = `estado-${est === '-' ? 'dash' : est === '*' ? 'ast' : est === '' ? 'vacio' : est}`;
+      const label = est === '' ? '·' : est;
+      if (APP.esEditor) {
+        tbody += `<td><button class="celda-btn ${claseBtn}" title="${ETIQUETAS[est]}" onclick="event.stopPropagation();ciclarEstado(${iRow},${iCol},this)">${label}</button></td>`;
+      } else {
+        tbody += `<td><span class="celda-btn ${claseBtn}" style="cursor:default;width:auto;min-width:28px;padding:0 4px">${label}</span></td>`;
+      }
+    });
+    tbody += '</tr>';
+  });
+  tbody += '</tbody>';
+
+  tabla.innerHTML = thead + tbody;
+}
+
+function seleccionarFila(idx) {
+  if (!APP.esEditor) return;
+  APP.filaSeleccionada = APP.filaSeleccionada === idx ? null : idx;
+  document.getElementById('btnEliminarFila').disabled = APP.filaSeleccionada === null;
+  construirTabla();
+}
+
+function ciclarEstado(iRow, iCol, btn) {
+  const k = claveEstado(iRow, iCol);
+  const actual = APP.estados[k] || '';
+  const idx = CICLO.indexOf(actual);
+  const nuevo = CICLO[(idx + 1) % CICLO.length];
+  APP.estados[k] = nuevo;
+  guardarStorage();
+  const claseBtn = `estado-${nuevo === '-' ? 'dash' : nuevo === '*' ? 'ast' : nuevo === '' ? 'vacio' : nuevo}`;
+  btn.className = `celda-btn ${claseBtn}`;
+  btn.textContent = nuevo === '' ? '·' : nuevo;
+  btn.title = ETIQUETAS[nuevo];
+}
+
+function agregarFila() {
+  const dia = document.getElementById('nDia').value;
+  const turno = document.getElementById('nTurno').value;
+  const fecha = document.getElementById('nFecha').value;
+  const nombreCustom = document.getElementById('nNombreDia').value;
+  const diaFinal = nombreCustom || dia;
+  const tipo = dia === 'Feriado' ? 'feriado' : dia.toLowerCase().split(' ')[0];
+  APP.filas.push({dia: diaFinal, turno, fecha, tipo});
+  guardarStorage();
+  document.getElementById('modalFila').classList.add('hidden');
+  construirTabla();
+  mostrarToast('Turno agregado', 'success');
+}
+
+function eliminarFilaSeleccionada() {
+  if (APP.filaSeleccionada === null) return;
+  // Eliminar estados de esa fila
+  Object.keys(APP.estados).forEach(k => {
+    if (k.startsWith(`r${APP.filaSeleccionada}_`)) delete APP.estados[k];
+  });
+  // Reindexar estados de filas posteriores
+  const nuevosEstados = {};
+  Object.keys(APP.estados).forEach(k => {
+    const m = k.match(/^r(\d+)_c(\d+)$/);
+    if (m) {
+      const r = parseInt(m[1]);
+      const c = m[2];
+      if (r > APP.filaSeleccionada) {
+        nuevosEstados[`r${r-1}_c${c}`] = APP.estados[k];
+      } else {
+        nuevosEstados[k] = APP.estados[k];
+      }
+    }
+  });
+  APP.estados = nuevosEstados;
+  APP.filas.splice(APP.filaSeleccionada, 1);
+  APP.filaSeleccionada = null;
+  document.getElementById('btnEliminarFila').disabled = true;
+  guardarStorage();
+  construirTabla();
+  mostrarToast('Turno eliminado');
+}
+
+function agregarLinea() {
+  const nombre = document.getElementById('nLinea').value.trim().toUpperCase();
+  const sector = document.getElementById('nSector').value;
+  if (!nombre) { alert('Ingresá un nombre para la línea'); return; }
+  if (APP.lineas.find(l => l.nombre === nombre)) { alert('Esa línea ya existe'); return; }
+  APP.lineas.push({nombre, sector});
+  guardarStorage();
+  document.getElementById('modalLinea').classList.add('hidden');
+  construirTabla();
+  mostrarToast(`Línea ${nombre} agregada`, 'success');
+}
+
+// ==================== SEMANA ====================
+// ==================== SEMANA ====================
+function actualizarFechaInicio() {
+  APP.semanaDesde = document.getElementById('fechaInicio').value;
+  guardarStorage();
+  actualizarLabelSemana();
+}
+
+function actualizarLabelSemana() {
+  const el = document.getElementById('semanaLabel');
+  if (APP.semanaDesde) {
+    el.textContent = `📅 Desde el ${formatearFechaLarga(APP.semanaDesde)}`;
+  } else {
+    el.textContent = '📅 Semana sin definir';
+  }
+  const asunto = document.getElementById('asuntoMail');
+  if (asunto && APP.semanaDesde) {
+    asunto.value = `Turnos fin de semana — ${formatearFechaLarga(APP.semanaDesde)}`;
+  }
+}
+
+function formatearFechaLarga(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  const meses = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${parseInt(d)} de ${meses[parseInt(m)]}`;
+}
+
+function formatearFecha(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  const meses = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)}/${meses[parseInt(m)]}`;
+}
+
+// ==================== LOGIN ====================
+function abrirLogin() {
+  document.getElementById('modalLogin').classList.remove('hidden');
+  setTimeout(() => document.getElementById('inputPass').focus(), 100);
+}
+
+function cerrarLogin() {
+  document.getElementById('modalLogin').classList.add('hidden');
+}
+
+function verificarPass() {
+  const val = document.getElementById('inputPass').value;
+  if (val === APP.pass) {
+    APP.esEditor = true;
+    cerrarLogin();
+    document.getElementById('inputPass').value = '';
+    document.getElementById('errPass').classList.add('hidden');
+    activarModoEditor();
+    mostrarToast('Modo editor activado', 'success');
+  } else {
+    document.getElementById('errPass').classList.remove('hidden');
+    document.getElementById('inputPass').select();
+  }
+}
+
+function salir() {
+  APP.esEditor = false;
+  document.getElementById('badgeEditor').classList.add('hidden');
+  document.getElementById('btnLoginHeader').classList.remove('hidden');
+  document.getElementById('btnLogout').classList.add('hidden');
+  document.querySelectorAll('.editor-only').forEach(el => el.classList.add('hidden'));
+  construirTabla();
+  mostrarToast('Sesión cerrada');
+}
+
+function activarModoEditor() {
+  document.getElementById('badgeEditor').classList.remove('hidden');
+  document.getElementById('btnLoginHeader').classList.add('hidden');
+  document.getElementById('btnLogout').classList.remove('hidden');
+  document.querySelectorAll('.editor-only').forEach(el => el.classList.remove('hidden'));
+  if (APP.semanaDesde) {
+    document.getElementById('fechaInicio').value = APP.semanaDesde;
+  }
+  document.getElementById('asuntoMail').removeAttribute('readonly');
+  construirTabla();
+  renderDestinatatios();
+}
+
+function cambiarPass() {
+  const nueva = document.getElementById('inputNuevaPass').value;
+  if (nueva.length < 4) { mostrarToast('La contraseña debe tener al menos 4 caracteres', 'error'); return; }
+  APP.pass = nueva;
+  localStorage.setItem('turnos_pass', nueva);
+  document.getElementById('inputNuevaPass').value = '';
+  mostrarToast('Contraseña actualizada', 'success');
+}
+
+// ==================== DESTINATARIOS ====================
+function renderDestinatatios() {
+  const lista = document.getElementById('listaDest');
+  lista.innerHTML = APP.destinatarios.map((d,i) =>
+    `<div class="dest-tag">${d}${APP.esEditor ? `<button class="quitar" onclick="quitarDest(${i})">×</button>` : ''}</div>`
+  ).join('') || '<span style="font-size:12px;color:var(--gris-texto);">Sin destinatarios cargados</span>';
+}
+
+function agregarDest() {
+  const v = document.getElementById('inputDest').value.trim();
+  if (!v || !v.includes('@')) { mostrarToast('Email inválido', 'error'); return; }
+  if (!APP.destinatarios.includes(v)) {
+    APP.destinatarios.push(v);
+    guardarStorage();
+    renderDestinatatios();
+    document.getElementById('inputDest').value = '';
+    mostrarToast('Destinatario agregado', 'success');
+  }
+}
+
+function quitarDest(i) {
+  APP.destinatarios.splice(i,1);
+  guardarStorage();
+  renderDestinatatios();
+}
+
+// ==================== EMAIL ====================
+function generarTablaHTML() {
+  const sectores = APP.sectores;
+  const sectorLineas = {};
+  sectores.forEach(s => { sectorLineas[s] = []; });
+  APP.lineas.forEach(l => {
+    if (!sectorLineas[l.sector]) sectorLineas[l.sector] = [];
+    sectorLineas[l.sector].push(l.nombre);
+  });
+  const sectoresActivos = sectores.filter(s => sectorLineas[s].length > 0);
+  const colsOrden = [];
+  sectoresActivos.forEach(s => sectorLineas[s].forEach(l => colsOrden.push(l)));
+
+  let html = '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;">';
+  html += '<thead>';
+  html += '<tr style="background:#1e3a5f;color:white;">';
+  html += '<th rowspan="2">Turno</th>';
+  sectoresActivos.forEach(s => {
+    html += `<th colspan="${sectorLineas[s].length}">${s}</th>`;
+  });
+  html += '</tr><tr style="background:#2c5282;color:white;">';
+  sectoresActivos.forEach(s => sectorLineas[s].forEach(l => { html += `<th>${l}</th>`; }));
+  html += '</tr></thead><tbody>';
+
+  APP.filas.forEach((fila, iRow) => {
+    const bgRow = fila.tipo === 'sabado' ? '#f0f4ff' : fila.tipo === 'domingo' ? '#fff8f0' : fila.tipo === 'feriado' ? '#fffbeb' : '#f0fff4';
+    html += `<tr style="background:${bgRow};">`;
+    html += `<td><strong>${fila.dia}</strong> <em>${fila.turno}</em></td>`;
+    colsOrden.forEach((linea, iCol) => {
+      const k = claveEstado(iRow, iCol);
+      const est = APP.estados[k] || '·';
+      html += `<td style="text-align:center;">${est}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<p style="font-size:11px;margin-top:8px;color:#666;">Referencias: X=Trabaja | -=No trabaja | *=A confirmar | M=Mantenimiento | P=Pruebas</p>';
+  return html;
+}
+
+function togglePreview() {
+  const el = document.getElementById('previewEmail');
+  if (el.classList.contains('hidden')) {
+    el.innerHTML = `<strong>Asunto:</strong> ${document.getElementById('asuntoMail').value}<br><br>` + generarTablaHTML();
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function copiarMailtoLink() {
+  const dests = APP.destinatarios.join(',');
+  const asunto = encodeURIComponent(document.getElementById('asuntoMail').value);
+  const cuerpo = encodeURIComponent('Estimados,\n\nAdjunto el cuadro de turnos para el fin de semana.\n\n[Ver cuadro en: ' + window.location.href + ']\n\nSaludos.');
+  const mailto = `mailto:${dests}?subject=${asunto}&body=${cuerpo}`;
+  navigator.clipboard.writeText(mailto).then(() => {
+    mostrarToast('Link mailto copiado al portapapeles', 'success');
+  }).catch(() => {
+    prompt('Copiá este link:', mailto);
+  });
+}
+
+function abrirGASInstrucciones() {
+  const el = document.getElementById('instrGAS');
+  el.classList.toggle('hidden');
+}
+
+function enviarViaGAS() {
+  const url = document.getElementById('urlGAS').value.trim();
+  if (!url) { mostrarToast('Pegá la URL de tu Apps Script', 'error'); return; }
+  const payload = {
+    destinatarios: APP.destinatarios,
+    asunto: document.getElementById('asuntoMail').value,
+    htmlBody: generarTablaHTML(),
+    linkPagina: window.location.href
+  };
+  mostrarToast('Enviando...');
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(() => {
+    mostrarToast('¡Correo enviado correctamente!', 'success');
+  }).catch(err => {
+    mostrarToast('Error al enviar. Verificá la URL del script.', 'error');
+  });
+}
+
+function descargarGAS() {
+  const codigo = `// Google Apps Script — Envío automático de turnos
+// Pegá este código en script.google.com y deployalo como Web App
+// En "¿Quién puede acceder?" elegí "Cualquier persona"
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const dests = data.destinatarios.join(',');
+    const asunto = data.asunto;
+    const htmlBody = \`
+      <div style="font-family:Arial,sans-serif;font-size:13px;">
+        <p>Estimados,</p>
+        <p>A continuación el cuadro de turnos para el fin de semana:</p>
+        \${data.htmlBody}
+        <p style="margin-top:14px;">
+          <a href="\${data.linkPagina}" style="color:#2c5282;">→ Ver cuadro interactivo en línea</a>
+        </p>
+        <p>Saludos,<br>Equipo de Planificación</p>
+      </div>\`;
+    GmailApp.sendEmail(dests, asunto, '', {htmlBody: htmlBody});
+    return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false,error:err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+  const blob = new Blob([codigo], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'turnos_gas.js';
+  a.click();
+  mostrarToast('Código descargado', 'success');
+}
+
+// ==================== UTILS ====================
+function togglePanel(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('hidden');
+  header.classList.toggle('collapsed');
+}
+
+function mostrarToast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo || ''}`;
+  setTimeout(() => { t.classList.add('hidden'); }, 3200);
+}
+
+// Modal feriado toggle
+document.getElementById('nDia').addEventListener('change', function() {
+  const esFer = this.value === 'Feriado';
+  document.getElementById('grpNombreDia').style.display = esFer ? '' : 'none';
+});
+
+// ==================== INIT ====================
+function init() {
+  cargarStorage();
+  construirTabla();
+  actualizarLabelSemana();
+  renderDestinatatios();
+  // Mostrar login automáticamente si no hay datos
+  if (APP.filas.length === 0) {
+    setTimeout(abrirLogin, 400);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
