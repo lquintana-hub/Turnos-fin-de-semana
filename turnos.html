@@ -287,7 +287,12 @@
       <div class="acciones-tabla editor-only hidden">
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalFila').classList.remove('hidden')">＋ Agregar turno</button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalLinea').classList.remove('hidden')">＋ Agregar línea de producción</button>
+        <button class="btn btn-ghost btn-sm" id="btnCopiarCol" onclick="iniciarCopiaColumna()">📋 Copiar columna</button>
         <button class="btn btn-danger btn-sm" id="btnEliminarFila" disabled onclick="eliminarFilaSeleccionada()">🗑 Eliminar turno seleccionado</button>
+      </div>
+      <div id="msgCopia" class="hidden" style="margin-top:8px;font-size:12px;background:#fffbeb;border:1px solid #f6e05e;border-radius:6px;padding:8px 12px;color:#744210;">
+        📋 <strong>Modo copia:</strong> Hacé clic en el encabezado de la columna <u>origen</u> (la que querés copiar) y luego en la columna <u>destino</u>.
+        <button class="btn btn-ghost btn-sm" style="margin-left:10px;" onclick="cancelarCopia()">Cancelar</button>
       </div>
     </div>
   </div>
@@ -377,7 +382,7 @@ let APP = {
     {nombre:'L7', sector:'EXTRUSIÓN'},
     {nombre:'L8', sector:'EXTRUSIÓN'},
     {nombre:'L15', sector:'MEZCLADO'},
-    {nombre:'L14', sector:'MOLINO'},
+    {nombre:'L14M', sector:'MOLINO'},
     {nombre:'L9', sector:'FOLIADO'},
     {nombre:'L10', sector:'FOLIADO'},
     {nombre:'L11', sector:'FOLIADO'},
@@ -461,8 +466,13 @@ function construirTabla() {
   // Fila 2: líneas
   thead += '<tr>';
   sectoresActivos.forEach(s => {
-    sectorLineas[s].forEach(l => {
-      thead += `<th class="col-linea">${l}</th>`;
+    sectorLineas[s].forEach((l, li) => {
+      const iCol = colsOrden.indexOf(l);
+      if (APP.esEditor) {
+        thead += `<th class="col-linea" style="cursor:pointer;" onclick="clickEncabezadoColumna(${iCol})" title="Clic para copiar esta columna">${l}</th>`;
+      } else {
+        thead += `<th class="col-linea">${l}</th>`;
+      }
     });
   });
   thead += '</tr></thead>';
@@ -519,7 +529,53 @@ function ciclarEstado(iRow, iCol, btn) {
   btn.title = ETIQUETAS[nuevo];
 }
 
-function agregarFila() {
+// ==================== COPIA DE COLUMNA ====================
+let modoCopia = false;
+let colOrigen = null;
+
+function iniciarCopiaColumna() {
+  modoCopia = true;
+  colOrigen = null;
+  document.getElementById('msgCopia').classList.remove('hidden');
+  document.getElementById('btnCopiarCol').disabled = true;
+  mostrarToast('Hacé clic en el encabezado de la columna origen');
+}
+
+function cancelarCopia() {
+  modoCopia = false;
+  colOrigen = null;
+  document.getElementById('msgCopia').classList.add('hidden');
+  document.getElementById('btnCopiarCol').disabled = false;
+  construirTabla();
+}
+
+function clickEncabezadoColumna(iCol) {
+  if (!modoCopia) return;
+  if (colOrigen === null) {
+    // Primer clic: seleccionar origen
+    colOrigen = iCol;
+    mostrarToast(`Columna origen seleccionada. Ahora hacé clic en la columna destino.`);
+    // Resaltar visualmente
+    construirTabla();
+  } else {
+    // Segundo clic: pegar en destino
+    const iDest = iCol;
+    if (iDest === colOrigen) {
+      mostrarToast('El origen y destino son iguales. Elegí otra columna.', 'error');
+      return;
+    }
+    // Copiar todos los estados de colOrigen → iDest
+    APP.filas.forEach((_, iRow) => {
+      const kOrigen = claveEstado(iRow, colOrigen);
+      const kDest = claveEstado(iRow, iDest);
+      APP.estados[kDest] = APP.estados[kOrigen] || '';
+    });
+    guardarStorage();
+    cancelarCopia();
+    construirTabla();
+    mostrarToast('Columna copiada correctamente', 'success');
+  }
+}
   const dia = document.getElementById('nDia').value;
   const turno = document.getElementById('nTurno').value;
   const fecha = document.getElementById('nFecha').value;
