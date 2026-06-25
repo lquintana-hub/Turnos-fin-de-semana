@@ -364,7 +364,7 @@
 
 <script>
 // ==================== ESTADO ====================
-const PASS_DEFAULT = '0209';
+const PASS_DEFAULT = 'planif2024';
 let APP = {
   esEditor: false,
   pass: localStorage.getItem('turnos_pass') || PASS_DEFAULT,
@@ -576,7 +576,8 @@ function clickEncabezadoColumna(iCol) {
     mostrarToast('Columna copiada correctamente', 'success');
   }
 }
-  const dia = document.getElementById('nDia').value;
+
+function agregarFila() {
   const turno = document.getElementById('nTurno').value;
   const fecha = document.getElementById('nFecha').value;
   const nombreCustom = document.getElementById('nNombreDia').value;
