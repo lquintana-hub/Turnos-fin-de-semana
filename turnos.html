@@ -454,6 +454,10 @@ function construirTabla() {
 
   const sectoresActivos = sectores.filter(s => sectorLineas[s].length > 0);
 
+  // Construir orden de columnas (debe ir ANTES del thead)
+  const colsOrden = [];
+  sectoresActivos.forEach(s => sectorLineas[s].forEach(l => colsOrden.push(l)));
+
   // THEAD
   let thead = '<thead>';
   // Fila 1: grupos
@@ -476,10 +480,6 @@ function construirTabla() {
     });
   });
   thead += '</tr></thead>';
-
-  // Construir orden de columnas
-  const colsOrden = [];
-  sectoresActivos.forEach(s => sectorLineas[s].forEach(l => colsOrden.push(l)));
 
   // TBODY
   let tbody = '<tbody>';
