@@ -77,7 +77,7 @@
   .tabla-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gris-borde); }
   table { border-collapse: collapse; width: 100%; min-width: 800px; font-size: 13px; table-layout: fixed; }
   th { background: var(--azul); color: white; padding: 8px 6px; text-align: center; font-weight: 600; font-size: 12px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.15); }
-  th:first-child { text-align: left; padding-left: 12px; width: 160px; }
+  th:first-child { text-align: left; padding-left: 12px; width: 110px; }
   th.col-linea { width: 38px; padding: 8px 2px; }
   th.grupo { background: var(--azul-medio); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
   td { border-bottom: 1px solid var(--gris-borde); border-right: 1px solid var(--gris-borde); text-align: center; padding: 3px 4px; vertical-align: middle; }
@@ -578,14 +578,26 @@ function clickEncabezadoColumna(iCol) {
 }
 
 function agregarFila() {
+  const dia = document.getElementById('nDia').value;
   const turno = document.getElementById('nTurno').value;
   const fecha = document.getElementById('nFecha').value;
-  const nombreCustom = document.getElementById('nNombreDia').value;
-  const diaFinal = nombreCustom || dia;
+  const nombreCustom = document.getElementById('nNombreDia').value.trim();
+
+  // Validar fecha obligatoria
+  if (!fecha) {
+    alert('Por favor introducí la fecha antes de agregar el turno.');
+    document.getElementById('nFecha').focus();
+    return;
+  }
+
+  const diaFinal = (dia === 'Feriado' && nombreCustom) ? nombreCustom : dia;
   const tipo = dia === 'Feriado' ? 'feriado' : dia.toLowerCase().split(' ')[0];
   APP.filas.push({dia: diaFinal, turno, fecha, tipo});
   guardarStorage();
   document.getElementById('modalFila').classList.add('hidden');
+  // Limpiar campos para la próxima vez
+  document.getElementById('nFecha').value = '';
+  document.getElementById('nNombreDia').value = '';
   construirTabla();
   mostrarToast('Turno agregado', 'success');
 }
