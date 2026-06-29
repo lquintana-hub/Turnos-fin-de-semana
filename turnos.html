@@ -77,11 +77,15 @@
   .tabla-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gris-borde); }
   table { border-collapse: collapse; width: 100%; min-width: 800px; font-size: 13px; table-layout: fixed; }
   th { background: var(--azul); color: white; padding: 8px 6px; text-align: center; font-weight: 600; font-size: 12px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.15); }
-  th:first-child { text-align: left; padding-left: 12px; width: 110px; }
+  th:first-child { text-align: left; padding-left: 12px; width: 130px; }
   th.col-linea { width: 38px; padding: 8px 2px; }
   th.grupo { background: var(--azul-medio); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
   td { border-bottom: 1px solid var(--gris-borde); border-right: 1px solid var(--gris-borde); text-align: center; padding: 3px 4px; vertical-align: middle; }
-  td:first-child { text-align: left; padding: 6px 12px; font-weight: 500; }
+  td:first-child { text-align: left; padding: 4px 6px; font-weight: 500; }
+  .mover-btns { display: inline-flex; flex-direction: column; gap: 1px; margin-right: 4px; vertical-align: middle; }
+  .btn-mover { background: none; border: none; cursor: pointer; font-size: 10px; line-height: 1; padding: 1px 2px; color: var(--gris-texto); border-radius: 2px; }
+  .btn-mover:hover { background: var(--azul-claro); color: var(--azul-medio); }
+  .btn-mover:disabled { opacity: 0.2; cursor: default; }
   tr:last-child td { border-bottom: none; }
   tr.fila-sabado { background: #f0f4ff; }
   tr.fila-domingo { background: #fff8f0; }
@@ -174,15 +178,11 @@
       <div class="ctrl-grupo">
         <label>Día</label>
         <select id="nDia">
-          <option value="Sábado">Sábado</option>
-          <option value="Domingo">Domingo</option>
+          <option value="Jueves">Jueves</option>
+          <option value="Viernes">Viernes</option>
           <option value="Lunes">Lunes</option>
-          <option value="Feriado">Feriado / Otro día</option>
+          <option value="Otro">Otro</option>
         </select>
-      </div>
-      <div class="ctrl-grupo" id="grpFecha">
-        <label>Fecha (opcional)</label>
-        <input type="date" id="nFecha">
       </div>
       <div class="ctrl-grupo">
         <label>Turno</label>
@@ -193,7 +193,7 @@
         </select>
       </div>
       <div class="ctrl-grupo" id="grpNombreDia" style="display:none">
-        <label>Nombre del día (ej: Lunes feriado, Viernes largo)</label>
+        <label>Nombre del día (ej: Martes feriado, Viernes largo)</label>
         <input type="text" id="nNombreDia" placeholder="ej: Martes feriado">
       </div>
     </div>
@@ -288,11 +288,17 @@
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalFila').classList.remove('hidden')">＋ Agregar turno</button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modalLinea').classList.remove('hidden')">＋ Agregar línea de producción</button>
         <button class="btn btn-ghost btn-sm" id="btnCopiarCol" onclick="iniciarCopiaColumna()">📋 Copiar columna</button>
-        <button class="btn btn-danger btn-sm" id="btnEliminarFila" disabled onclick="eliminarFilaSeleccionada()">🗑 Eliminar turno seleccionado</button>
+        <button class="btn btn-ghost btn-sm" id="btnCopiarFila" disabled onclick="iniciarCopiaFila()">📋 Copiar fila</button>
+        <button class="btn btn-ghost btn-sm" onclick="borrarTodo()" style="color:#c53030;">🗑 Borrar todo</button>
+        <button class="btn btn-danger btn-sm" id="btnEliminarFila" disabled onclick="eliminarFilaSeleccionada()">✕ Eliminar turno seleccionado</button>
       </div>
       <div id="msgCopia" class="hidden" style="margin-top:8px;font-size:12px;background:#fffbeb;border:1px solid #f6e05e;border-radius:6px;padding:8px 12px;color:#744210;">
-        📋 <strong>Modo copia:</strong> Hacé clic en el encabezado de la columna <u>origen</u> (la que querés copiar) y luego en la columna <u>destino</u>.
+        📋 <strong>Modo copia columna:</strong> Hacé clic en el encabezado de la columna <u>origen</u> y luego en la columna <u>destino</u>.
         <button class="btn btn-ghost btn-sm" style="margin-left:10px;" onclick="cancelarCopia()">Cancelar</button>
+      </div>
+      <div id="msgCopiaFila" class="hidden" style="margin-top:8px;font-size:12px;background:#ebf8ff;border:1px solid #90cdf4;border-radius:6px;padding:8px 12px;color:#2b6cb0;">
+        📋 <strong>Modo copia fila:</strong> Hacé clic en la fila <u>destino</u> donde querés pegar los estados.
+        <button class="btn btn-ghost btn-sm" style="margin-left:10px;" onclick="cancelarCopiaFila()">Cancelar</button>
       </div>
     </div>
   </div>
@@ -489,7 +495,26 @@ function construirTabla() {
     tbody += `<tr class="${claseRow}" data-row="${iRow}" onclick="seleccionarFila(${iRow})">`;
     // Columna nombre turno
     const tag = `<span class="turno-tag tag-${fila.turno}">${fila.turno}</span>`;
-    tbody += `<td><strong>${fila.dia}</strong>${tag}</td>`;
+    if (APP.esEditor) {
+      // Calcular si es primer o último bloque de día
+      const esPrimerDelDia = iRow === 0 || APP.filas[iRow-1].dia !== fila.dia;
+      const esUltimoDelDia = iRow === APP.filas.length-1 || APP.filas[iRow+1].dia !== fila.dia;
+      // Solo mostrar flechas en la primera fila del bloque
+      const puedeSubir = esPrimerDelDia && iRow > 0;
+      const puedeBajar = esUltimoDelDia && iRow < APP.filas.length - 1;
+      tbody += `<td>`;
+      if (esPrimerDelDia) {
+        tbody += `<span class="mover-btns">`;
+        tbody += `<button class="btn-mover" onclick="event.stopPropagation();moverBloque('${fila.dia}',-1)" ${puedeSubir ? '' : 'disabled'} title="Subir día">▲</button>`;
+        tbody += `<button class="btn-mover" onclick="event.stopPropagation();moverBloque('${fila.dia}',1)" ${puedeBajar ? '' : 'disabled'} title="Bajar día">▼</button>`;
+        tbody += `</span>`;
+      } else {
+        tbody += `<span style="display:inline-block;width:22px;"></span>`;
+      }
+      tbody += `<strong>${fila.dia}</strong>${tag}</td>`;
+    } else {
+      tbody += `<td><strong>${fila.dia}</strong>${tag}</td>`;
+    }
     // Columnas estados
     colsOrden.forEach((linea, iCol) => {
       const k = claveEstado(iRow, iCol);
@@ -580,23 +605,20 @@ function clickEncabezadoColumna(iCol) {
 function agregarFila() {
   const dia = document.getElementById('nDia').value;
   const turno = document.getElementById('nTurno').value;
-  const fecha = document.getElementById('nFecha').value;
   const nombreCustom = document.getElementById('nNombreDia').value.trim();
 
-  // Validar fecha obligatoria
-  if (!fecha) {
-    alert('Por favor introducí la fecha antes de agregar el turno.');
-    document.getElementById('nFecha').focus();
+  // Si es Otro, validar que escribió un nombre
+  if (dia === 'Otro' && !nombreCustom) {
+    alert('Por favor escribí el nombre del día.');
+    document.getElementById('nNombreDia').focus();
     return;
   }
 
-  const diaFinal = (dia === 'Feriado' && nombreCustom) ? nombreCustom : dia;
-  const tipo = dia === 'Feriado' ? 'feriado' : dia.toLowerCase().split(' ')[0];
-  APP.filas.push({dia: diaFinal, turno, fecha, tipo});
+  const diaFinal = (dia === 'Otro' && nombreCustom) ? nombreCustom : dia;
+  const tipo = dia === 'Otro' ? 'feriado' : dia.toLowerCase().split(' ')[0];
+  APP.filas.push({dia: diaFinal, turno, tipo});
   guardarStorage();
   document.getElementById('modalFila').classList.add('hidden');
-  // Limpiar campos para la próxima vez
-  document.getElementById('nFecha').value = '';
   document.getElementById('nNombreDia').value = '';
   construirTabla();
   mostrarToast('Turno agregado', 'success');
@@ -604,6 +626,15 @@ function agregarFila() {
 
 function eliminarFilaSeleccionada() {
   if (APP.filaSeleccionada === null) return;
+  const fila = APP.filas[APP.filaSeleccionada];
+  // Proteger Sábado y Domingo
+  if (fila.dia === 'Sábado' || fila.dia === 'Domingo') {
+    mostrarToast('Los turnos de Sábado y Domingo no se pueden eliminar', 'error');
+    APP.filaSeleccionada = null;
+    document.getElementById('btnEliminarFila').disabled = true;
+    construirTabla();
+    return;
+  }
   // Eliminar estados de esa fila
   Object.keys(APP.estados).forEach(k => {
     if (k.startsWith(`r${APP.filaSeleccionada}_`)) delete APP.estados[k];
@@ -629,6 +660,135 @@ function eliminarFilaSeleccionada() {
   guardarStorage();
   construirTabla();
   mostrarToast('Turno eliminado');
+}
+
+function moverBloque(nombreDia, direccion) {
+  // Encontrar indices del bloque
+  const indices = APP.filas.map((f,i) => f.dia === nombreDia ? i : -1).filter(i => i >= 0);
+  if (!indices.length) return;
+
+  const ORDEN_TURNOS = ['TM','TT','TN'];
+
+  if (direccion === -1) {
+    // Subir: mover el bloque antes del bloque anterior
+    const primerIdx = indices[0];
+    if (primerIdx === 0) return;
+    // Encontrar inicio del bloque anterior
+    const diaAnterior = APP.filas[primerIdx - 1].dia;
+    const indicesAnt = APP.filas.map((f,i) => f.dia === diaAnterior ? i : -1).filter(i => i >= 0);
+    const inicioAnt = indicesAnt[0];
+
+    // Extraer ambos bloques
+    const bloqueAnt = APP.filas.splice(inicioAnt, indicesAnt.length);
+    const bloqueActual = APP.filas.splice(inicioAnt, indices.length);
+
+    // Reordenar turnos dentro del bloque actual
+    bloqueActual.sort((a,b) => ORDEN_TURNOS.indexOf(a.turno) - ORDEN_TURNOS.indexOf(b.turno));
+    bloqueAnt.sort((a,b) => ORDEN_TURNOS.indexOf(a.turno) - ORDEN_TURNOS.indexOf(b.turno));
+
+    // Insertar: primero actual, luego anterior
+    APP.filas.splice(inicioAnt, 0, ...bloqueActual, ...bloqueAnt);
+
+  } else {
+    // Bajar: mover el bloque después del bloque siguiente
+    const ultimoIdx = indices[indices.length - 1];
+    if (ultimoIdx >= APP.filas.length - 1) return;
+    const diaSiguiente = APP.filas[ultimoIdx + 1].dia;
+    const indicesSig = APP.filas.map((f,i) => f.dia === diaSiguiente ? i : -1).filter(i => i >= 0);
+    const inicioActual = indices[0];
+
+    const bloqueActual = APP.filas.splice(inicioActual, indices.length);
+    const bloqueSig = APP.filas.splice(inicioActual, indicesSig.length);
+
+    bloqueActual.sort((a,b) => ORDEN_TURNOS.indexOf(a.turno) - ORDEN_TURNOS.indexOf(b.turno));
+    bloqueSig.sort((a,b) => ORDEN_TURNOS.indexOf(a.turno) - ORDEN_TURNOS.indexOf(b.turno));
+
+    APP.filas.splice(inicioActual, 0, ...bloqueSig, ...bloqueActual);
+  }
+
+  // Reconstruir estados con los nuevos índices
+  reconstruirEstados();
+  guardarStorage();
+  construirTabla();
+}
+
+function reconstruirEstados() {
+  // Reindexar estados cuando cambia el orden de filas
+  // Guardamos una copia de estados indexada por contenido de fila
+  const estadosPorFila = APP.filas.map((_, iRow) => {
+    const cols = {};
+    for (let c = 0; c < APP.lineas.length; c++) {
+      const k = claveEstado(iRow, c);
+      if (APP.estados[k]) cols[c] = APP.estados[k];
+    }
+    return cols;
+  });
+  // Limpiar y reescribir — ya están en el orden correcto porque splice reordenó APP.filas
+  APP.estados = {};
+  estadosPorFila.forEach((cols, iRow) => {
+    Object.keys(cols).forEach(c => {
+      APP.estados[claveEstado(iRow, parseInt(c))] = cols[c];
+    });
+  });
+}
+
+// ==================== COPIAR FILA ====================
+let modoCopiaFila = false;
+let filaOrigenCopia = null;
+
+function iniciarCopiaFila() {
+  if (APP.filaSeleccionada === null) {
+    mostrarToast('Primero seleccioná una fila haciendo clic en ella', 'error');
+    return;
+  }
+  modoCopiaFila = true;
+  filaOrigenCopia = APP.filaSeleccionada;
+  document.getElementById('msgCopiaFila').classList.remove('hidden');
+  document.getElementById('btnCopiarFila').disabled = true;
+  mostrarToast('Ahora hacé clic en la fila destino');
+}
+
+function cancelarCopiaFila() {
+  modoCopiaFila = false;
+  filaOrigenCopia = null;
+  document.getElementById('msgCopiaFila').classList.add('hidden');
+  document.getElementById('btnCopiarFila').disabled = false;
+  APP.filaSeleccionada = null;
+  construirTabla();
+}
+
+function seleccionarFila(idx) {
+  if (!APP.esEditor) return;
+  if (modoCopiaFila) {
+    // Segundo clic: pegar
+    if (idx === filaOrigenCopia) {
+      mostrarToast('El origen y destino son iguales. Elegí otra fila.', 'error');
+      return;
+    }
+    for (let c = 0; c < APP.lineas.length; c++) {
+      const kOrigen = claveEstado(filaOrigenCopia, c);
+      const kDest = claveEstado(idx, c);
+      if (APP.estados[kOrigen]) APP.estados[kDest] = APP.estados[kOrigen];
+      else delete APP.estados[kDest];
+    }
+    guardarStorage();
+    cancelarCopiaFila();
+    mostrarToast('Fila copiada correctamente', 'success');
+    return;
+  }
+  APP.filaSeleccionada = APP.filaSeleccionada === idx ? null : idx;
+  document.getElementById('btnEliminarFila').disabled = APP.filaSeleccionada === null;
+  document.getElementById('btnCopiarFila').disabled = APP.filaSeleccionada === null;
+  construirTabla();
+}
+
+// ==================== BORRAR TODO ====================
+function borrarTodo() {
+  if (!confirm('¿Seguro que querés borrar todos los estados? Las filas y líneas se conservan, solo se vacían las celdas.')) return;
+  APP.estados = {};
+  guardarStorage();
+  construirTabla();
+  mostrarToast('Todos los estados borrados', 'success');
 }
 
 function agregarLinea() {
@@ -722,6 +882,7 @@ function activarModoEditor() {
     document.getElementById('fechaInicio').value = APP.semanaDesde;
   }
   document.getElementById('asuntoMail').removeAttribute('readonly');
+  document.getElementById('btnCopiarFila').disabled = true;
   construirTabla();
   renderDestinatatios();
 }
@@ -899,10 +1060,9 @@ function mostrarToast(msg, tipo) {
   setTimeout(() => { t.classList.add('hidden'); }, 3200);
 }
 
-// Modal feriado toggle
+// Modal otro día toggle
 document.getElementById('nDia').addEventListener('change', function() {
-  const esFer = this.value === 'Feriado';
-  document.getElementById('grpNombreDia').style.display = esFer ? '' : 'none';
+  document.getElementById('grpNombreDia').style.display = this.value === 'Otro' ? '' : 'none';
 });
 
 // ==================== INIT ====================
