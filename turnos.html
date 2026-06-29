@@ -304,47 +304,55 @@
   </div>
 
   <!-- PANEL ENVÍO -->
-  <div class="envio-panel">
-    <div class="envio-titulo">📧 Enviar correo semanal</div>
-
-    <div class="seccion-titulo">Destinatarios</div>
-    <div class="destinatarios-lista" id="listaDest"></div>
-    <div class="add-dest editor-only hidden">
-      <input type="email" id="inputDest" placeholder="email@empresa.com" onkeydown="if(event.key==='Enter')agregarDest()">
-      <button class="btn btn-ghost btn-sm" onclick="agregarDest()">＋ Agregar</button>
+  <div class="panel" style="margin-top:16px;">
+    <div class="panel-header" onclick="togglePanel(this)">
+      <span>📧 Enviar correo semanal</span>
+      <span class="chevron">▼</span>
     </div>
+    <div class="panel-body">
 
-    <div class="seccion-titulo" style="margin-top:12px;">Asunto del correo</div>
-    <div class="ctrl-grupo" style="margin-bottom:12px;">
-      <input type="text" id="asuntoMail" value="Turnos fin de semana" style="border:1px solid var(--gris-borde);border-radius:6px;padding:7px 10px;font-size:13px;width:100%;outline:none;" readonly id="asuntoMailInput">
-    </div>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="togglePreview()">👁 Vista previa del mail</button>
-      <button class="btn btn-success" onclick="copiarMailtoLink()">📋 Copiar link mailto</button>
-      <button class="btn btn-primary" onclick="abrirGASInstrucciones()">📤 Enviar con Gmail (Google Apps Script)</button>
-    </div>
-
-    <div id="previewEmail" class="preview-email hidden" style="margin-top:14px;"></div>
-
-    <!-- INSTRUCCIONES GAS -->
-    <div id="instrGAS" class="hidden" style="margin-top:14px;border:1px solid var(--azul-borde);border-radius:8px;background:var(--azul-claro);padding:16px;">
-      <p style="font-weight:600;color:var(--azul);margin-bottom:8px;">📌 Cómo configurar el envío automático con Gmail</p>
-      <ol style="margin-left:16px;font-size:12px;color:var(--gris-texto);line-height:2;">
-        <li>Abrí <a href="https://script.google.com" target="_blank" style="color:var(--azul-medio)">script.google.com</a> con tu cuenta de Gmail</li>
-        <li>Creá un proyecto nuevo y pegá el código que se descarga abajo</li>
-        <li>Hacé clic en "Guardar" y luego en "Implementar &gt; Nueva implementación"</li>
-        <li>Autorizá los permisos de Gmail cuando te lo pida</li>
-        <li>Copiá la URL del script y guardala — la necesitarás para enviar desde esta página</li>
-        <li>Pegá esa URL en el campo de abajo:</li>
-      </ol>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <input type="text" id="urlGAS" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;border:1px solid var(--azul-borde);border-radius:6px;padding:7px 10px;font-size:12px;outline:none;">
-        <button class="btn btn-primary btn-sm" onclick="enviarViaGAS()">Enviar ahora</button>
+      <div class="seccion-titulo">Destinatarios</div>
+      <div class="destinatarios-lista" id="listaDest"></div>
+      <div class="add-dest editor-only hidden" style="margin-top:8px;">
+        <input type="email" id="inputDest" placeholder="email@empresa.com" onkeydown="if(event.key==='Enter')agregarDest()">
+        <button class="btn btn-ghost btn-sm" onclick="agregarDest()">＋ Agregar</button>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="descargarGAS()">⬇ Descargar código Apps Script</button>
+
+      <div class="seccion-titulo" style="margin-top:14px;">Asunto del correo</div>
+      <input type="text" id="asuntoMail" value="Turnos fin de semana" style="border:1px solid var(--gris-borde);border-radius:6px;padding:7px 10px;font-size:13px;width:100%;outline:none;margin-bottom:14px;" readonly>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="togglePreview()">👁 Vista previa del mail</button>
+        <button class="btn btn-primary" onclick="enviarViaGAS()">📤 Enviar con Gmail</button>
+      </div>
+
+      <div id="previewEmail" class="preview-email hidden" style="margin-top:14px;"></div>
     </div>
   </div>
+
+  <!-- PANEL CONFIGURACIÓN GMAIL (colapsado) -->
+  <div class="panel editor-only hidden" style="margin-top:16px;">
+    <div class="panel-header collapsed" onclick="togglePanel(this)">
+      <span>⚙️ Configuración de envío Gmail (Google Apps Script)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="panel-body hidden">
+      <ol style="margin-left:16px;font-size:12px;color:var(--gris-texto);line-height:2.2;margin-bottom:12px;">
+        <li>Abrí <a href="https://script.google.com" target="_blank" style="color:var(--azul-medio)">script.google.com</a> con tu cuenta de Gmail</li>
+        <li>Creá un proyecto nuevo, pegá el código (botón abajo) y guardá</li>
+        <li>Clic en "Implementar → Nueva implementación" → tipo <strong>Aplicación web</strong></li>
+        <li>Ejecutar como: <strong>Yo</strong> · Acceso: <strong>Cualquier persona</strong></li>
+        <li>Autorizá los permisos de Gmail y copiá la URL generada</li>
+        <li>Pegá esa URL acá abajo y hacé clic en Guardar:</li>
+      </ol>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="urlGAS" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;border:1px solid var(--gris-borde);border-radius:6px;padding:7px 10px;font-size:12px;outline:none;">
+        <button class="btn btn-primary btn-sm" onclick="guardarUrlGAS()">Guardar URL</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="descargarGAS()">⬇ Descargar código Apps Script</button>
+    </div>
+  </div>
+
   <!-- PANEL CONTRASEÑA (colapsado, solo editor) -->
   <div class="panel editor-only hidden" style="margin-top:16px;">
     <div class="panel-header collapsed" onclick="togglePanel(this)">
@@ -394,7 +402,7 @@ let APP = {
     {nombre:'L11', sector:'FOLIADO'},
     {nombre:'L12', sector:'FOLIADO'},
     {nombre:'L13', sector:'FOLIADO'},
-    {nombre:'PLANTA', sector:'PLANTA RECICLADO'},
+    {nombre:'PLANTA', sector:'RECICLADO'},
   ],
   filas: [
     {dia:'Sábado', turno:'TM', fecha:'', tipo:'sabado'},
@@ -883,6 +891,9 @@ function activarModoEditor() {
   }
   document.getElementById('asuntoMail').removeAttribute('readonly');
   document.getElementById('btnCopiarFila').disabled = true;
+  // Cargar URL de GAS si está guardada
+  const urlGuardada = localStorage.getItem('turnos_gas_url');
+  if (urlGuardada) document.getElementById('urlGAS').value = urlGuardada;
   construirTabla();
   renderDestinatatios();
 }
@@ -985,14 +996,26 @@ function copiarMailtoLink() {
   });
 }
 
-function abrirGASInstrucciones() {
-  const el = document.getElementById('instrGAS');
-  el.classList.toggle('hidden');
+function guardarUrlGAS() {
+  const url = document.getElementById('urlGAS').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    mostrarToast('URL inválida. Debe ser de script.google.com', 'error');
+    return;
+  }
+  localStorage.setItem('turnos_gas_url', url);
+  mostrarToast('URL guardada correctamente', 'success');
 }
 
 function enviarViaGAS() {
-  const url = document.getElementById('urlGAS').value.trim();
-  if (!url) { mostrarToast('Pegá la URL de tu Apps Script', 'error'); return; }
+  const url = localStorage.getItem('turnos_gas_url') || document.getElementById('urlGAS').value.trim();
+  if (!url) {
+    mostrarToast('Primero configurá la URL del script en ⚙️ Configuración de envío Gmail', 'error');
+    return;
+  }
+  if (APP.destinatarios.length === 0) {
+    mostrarToast('Agregá al menos un destinatario antes de enviar', 'error');
+    return;
+  }
   const payload = {
     destinatarios: APP.destinatarios,
     asunto: document.getElementById('asuntoMail').value,
@@ -1007,8 +1030,8 @@ function enviarViaGAS() {
     body: JSON.stringify(payload)
   }).then(() => {
     mostrarToast('¡Correo enviado correctamente!', 'success');
-  }).catch(err => {
-    mostrarToast('Error al enviar. Verificá la URL del script.', 'error');
+  }).catch(() => {
+    mostrarToast('Error al enviar. Verificá la URL del script en Configuración.', 'error');
   });
 }
 
